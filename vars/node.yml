@@ -1,0 +1,6 @@
+---
+temp_folder: /tmp
+node_version: "6.9.2"
+node_prefix: "node-v{{node_version}}"
+node_tarball: "{{node_prefix}}.tar.gz"
+node_path: "/usr/local"

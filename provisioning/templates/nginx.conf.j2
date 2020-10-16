@@ -1,0 +1,15 @@
+server {  
+ listen 8088; 
+ #listen 443 ssl; 
+ server_name   69.64.33.230; 
+ root /var/www/iquippo.com/dist/public;
+ index index.html index.htm; 
+
+ access_log /var/log/nginx/iquippo.access.log; 
+ error_log  /var/log/nginx/iquippo.error.log; 
+ underscores_in_headers on; 
+ location /   {  
+    #try_files $uri $uri/index.html @proxy; 
+      proxy_pass http://localhost:8100;
+ }
+}

@@ -1,0 +1,7 @@
+---
+
+- name: Deploy Application
+  hosts: "{{ host }}"
+  roles: 
+    - www
+

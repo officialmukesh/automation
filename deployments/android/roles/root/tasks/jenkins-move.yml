@@ -1,0 +1,14 @@
+---
+- name: Deleting Existing apk from workspace
+  command: "sudo rm -rf {{ job_home }}/platforms"
+  become: true
+  become_user: root
+  become_method: su
+
+- name: Moving newly build apk to workspace
+  command: "sudo mv platforms {{ job_home }}"
+  args:
+    chdir: "{{ app_path }}/{{ app_dir }}"
+  become: true
+  become_user: root
+  become_method: su

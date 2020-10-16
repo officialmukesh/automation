@@ -1,0 +1,8 @@
+local ansible_ssh_host=127.0.0.1 ansible_connection=local 
+
+
+[localhost]
+local
+
+[vara-dev]
+vara-infra ansible_ssh_host=69.64.32.198 ansible_connection=ssh ansible_user=admin   

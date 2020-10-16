@@ -1,0 +1,8 @@
+---
+
+#- name: Install python dependency
+#  command: easy_install MySQL-python
+
+- include: mongo.yml
+  tags: db
+

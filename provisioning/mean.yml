@@ -1,0 +1,144 @@
+---
+- hosts: "{{ HOST }}"
+    
+  tasks:
+    - name: Include variables
+      include_vars:
+        dir: '../vars'
+        extensions: ['yml']
+
+    - name: Install git  
+      yum:    
+        name: git    
+        state: present    
+        update_cache: yes
+
+    - name: RedHat | Install dependencies packages
+      yum: name={{ item }} state=installed
+      with_items: "{{ mongodb_packages_dependencies | default([]) }}"
+      become: true
+      become_user: root
+
+    - name: RedHat | Add source sources
+      yum_repository:
+        name: mongodb-org-{{ mongodb_version }}
+        description: MongoDB Repository
+        baseurl: "{{ mongodb_repo_baseurl }}"
+        gpgcheck: "{{ mongodb_repo_gpgcheck }}"
+        gpgkey: "{{ mongodb_repo_gpgkey }}"
+      become: true
+      become_user: root
+
+    - name: RedHat | Install Packages
+      yum: name={{ item }} state=installed
+      with_items: "{{ mongodb_packages }}"
+      become: true
+      become_user: root
+
+    - file:
+        path: /data/db
+        state: directory
+        mode: 0777
+
+    - name: Install gcc/build tools 
+      yum: name={{ item }} state=installed
+      become: true
+      become_user: root
+      with_items:
+        - gcc
+        - "@Development tools"
+
+    
+    - name: Node.js | Checking installed version of node.js
+      shell: /usr/bin/test "$(node -v 2> /dev/null)" = v{{node_version}}
+      register: wanted_version_installed
+      ignore_errors: True
+      become: true
+      become_user: root
+
+    - name: Node.js | Fetching node.js source
+      action: get_url url=http://nodejs.org/dist/v{{node_version}}/{{node_tarball}} dest=/tmp
+      when: wanted_version_installed.rc == 1
+      become: true
+      become_user: root
+
+    - name: Node.js | Unpack node.js tarball
+      command: tar zxf {{node_tarball}} chdir=/tmp
+      when: wanted_version_installed.rc == 1
+      become: true
+      become_user: root
+
+    - name: Node.js | Configure
+      shell: /usr/bin/python ./configure --prefix={{node_path}} chdir=/tmp/{{node_prefix}}
+      when: wanted_version_installed.rc == 1
+      become: true
+      become_user: root
+
+    #- name: Node.js | Make
+    #  shell: /usr/bin/make  test chdir=/tmp/{{node_prefix}}/
+    #  when: wanted_version_installed.rc == 1
+    #  become: true
+    #  become_user: root
+
+    #- name: Node.js | Make install
+    #  shell: /usr/bin/make install chdir=/tmp/{{node_prefix}}/
+    #  when: wanted_version_installed.rc == 1
+    #  ignore_errors: true
+    #  become: true
+    #  become_user: root
+
+    
+
+    - name: Making node/npm available globally
+      shell: "sudo ln -s $(which {{ item }}) /usr/bin/" 
+      with_items:
+        - node
+        - npm
+    
+    - name: Node.js | Install bower and gulp globally
+      shell: "/usr/local/bin/npm install --global {{ item }}"
+      with_items:
+        - bower
+        - grunt-cli
+        - pm2    
+      become: true
+      become_user: root 
+
+    - name: Making bower/grunt/pm2 available globally
+      shell: "sudo ln -s $(which {{ item }}) /usr/bin/" 
+      with_items:
+        - bower
+        - grunt
+        - pm2
+
+    #- name: Install nginx web server
+    #  yum: name=nginx state=installed update_cache=true
+    #  notify:
+    #    - start nginx
+    #  become: true 
+    #  become_user: root
+
+    #  Only execute when require
+    #- name: copy nginx.conf to the server
+    #  template: src={{ item }} dest="/etc/nginx/conf.d/{{ build }}.conf"
+    #  with_fileglob:
+    #    - ./templates/nginx.conf.j2
+    #  become: true
+    #  become_user: root
+
+    #- name: delete default virtualhost
+    #  file: path=/etc/nginx/nginx.conf state=absent
+    #  become: true
+    #  become_user: root
+
+    #- name: Restart nginx service
+    #  command: service nginx restart
+    #  become: true
+    #  become_user: root
+
+    
+  handlers:
+    - name: start nginx
+      service: name=nginx enables=yes state=started
+
+    

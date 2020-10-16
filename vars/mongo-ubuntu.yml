@@ -1,0 +1,4 @@
+---
+keyserver: hkp://keyserver.ubuntu.com:80
+id: EA312927
+mongo_repo: 'deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse'

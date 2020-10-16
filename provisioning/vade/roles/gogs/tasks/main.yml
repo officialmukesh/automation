@@ -1,0 +1,10 @@
+---
+
+#Install go compiler first
+- include: go.yml
+- include: gogs.yml
+
+
+
+
+

@@ -1,0 +1,43 @@
+local ansible_ssh_host=127.0.0.1 ansible_connection=local
+
+iquippo-db1 ansible_ssh_host=172.31.100.196 ansible_connection=ssh ansible_user=ec2-user
+
+iquippo-db2 ansible_ssh_host=172.31.100.232 ansible_connection=ssh ansible_user=ec2-user
+
+iquippo-db3 ansible_ssh_host=172.31.100.245 ansible_connection=ssh ansible_user=ec2-user
+
+
+[iquippo-uat]
+iquippo-db1
+iquippo-db2
+iquippo-db3
+
+
+
+
+
+[localhost]
+local
+
+[windows-azure]
+13.82.109.51
+
+
+[windows-azure:vars]
+ansible_user=atul
+ansible_password=Atul@9911473361
+ansible_port=5985
+ansible_connection=winrm
+ansible_winrm_scheme=http
+ansible_winrm_server_cert_validation=ignore
+
+[windows-dev-server]
+209.126.105.208
+
+[windows-dev-server:vars]
+ansible_user=Administrator
+ansible_password=Vara4@wDas#5
+ansible_port=5985
+ansible_connection=winrm
+ansible_winrm_scheme=http
+ansible_winrm_server_cert_validation=ignore

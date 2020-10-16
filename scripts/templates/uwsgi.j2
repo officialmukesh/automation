@@ -1,0 +1,11 @@
+[uwsgi]
+chdir           = /home/admin/djangodev
+module          = /djangodev/wsgi.py
+home            = /home/admin/djangodev
+master          = true
+processes       = 4
+socket          = /home/admin/djangodev/djangodev.sock
+chmod-socket    = 666
+vacuum          = true
+harakiri        = 60
+max-requests    = 5000

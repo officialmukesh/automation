@@ -1,0 +1,72 @@
+---  
+  
+- name: Include variables
+  include_vars:
+    dir: '../vars'
+    extensions: ['yml']
+
+- name: Download the latest go compiler
+  get_url:
+    url: '{{ go_url }}'
+    dest: '{{ temp_folder }}'
+    checksum: '{{ go_hash }}'
+
+- name: debug through ansible.env
+  debug: msg="{{ go_home }}/{{ go_project_dir }}/bin"
+
+- name: Extract downloaded go zip
+  command: 'sudo tar -C /usr/local -xvzf {{ go_version }}'
+  args:
+    chdir: '{{ temp_folder }}'
+
+- stat:
+    path: "{{ go_home }}/{{ go_project_dir }}/bin"
+  register: goprojects_bin_exist
+
+- stat:
+    path: "{{ go_home }}/{{ go_project_dir }}/src"
+  register: goprojects_src_exist
+
+- name: Create directory gobin if not exist
+  command: "sudo mkdir -p {{ go_home }}/{{ go_project_dir }}/bin"  
+  when: goprojects_bin_exist.stat.exists != True
+
+- name: Create directory gosrc if not exist
+  command: "sudo mkdir -p {{ go_home }}/{{ go_project_dir }}/src"  
+  when: goprojects_src_exist.stat.exists != True
+
+- stat:
+    path: /etc/profile.d/path.sh
+  register: path_sh
+
+- name: Create path.sh if not exist
+  copy:
+    content: ""
+    dest: /etc/profile.d/path.sh
+    force: no
+    mode: 0644
+  become: true
+  become_user: root
+  when: path_sh.stat.exists != True
+  
+- lineinfile:
+    path: /etc/profile.d/path.sh
+    line: 'export PATH=$PATH:/usr/local/go/bin'
+  become: true
+  become_user: root
+
+- lineinfile:
+    path: "{{ go_home }}/.bashrc"
+    line: '{{ item }}'
+  with_items:
+    - export GOBIN="$HOME/{{ go_project_dir }}/bin"
+    - export GOPATH="$HOME/{{ go_project_dir }}/src"
+
+
+
+   
+
+
+      
+    
+

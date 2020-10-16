@@ -1,0 +1,7 @@
+[iquippo-uat]
+iquippo-uat1 ansible_ssh_host=172.31.101.147 ansible_connection=ssh ansible_user=atul_uat
+iquippo-uat2 ansible_ssh_host=172.31.101.166 ansible_connection=ssh ansible_user=atul_uat
+
+[vara-uat]
+vara-server ansible_ssh_host=199.217.113.145  ansible_connection=ssh ansible_user=root
+

@@ -1,0 +1,18 @@
+---
+
+- name: Deploy Application
+  hosts: "{{ host }}"
+  roles: 
+    - iis
+  #become: true
+  #become_user: www-data
+  tags: [site-deployment,iis]
+
+
+- name: Building Mysql 
+  hosts: "{{ host }}"
+  roles: 
+    - db
+#  become: true
+#  become_user: www-data
+  tags: [db]

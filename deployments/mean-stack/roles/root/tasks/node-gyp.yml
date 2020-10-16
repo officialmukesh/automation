@@ -1,0 +1,4 @@
+---
+- name: Install node-gyp globally
+  command: npm install --global node-gyp
+  

@@ -1,0 +1,12 @@
+---
+
+- name: Deploy Application
+  hosts: "localhost"
+  roles: 
+    - www
+  become: true
+  become_user: admin
+  become_method : su
+  
+  #tags: [site-deployment,iquippo,mean-test]
+

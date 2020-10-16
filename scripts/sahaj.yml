@@ -1,0 +1,64 @@
+---
+# - name: 'iquippo-build-creation'
+- hosts: "{{ HOST }}"
+  become: true
+  become_user: "{{ become_user }}"
+  become_method: su
+  gather_facts: true
+  vars:
+    ansible_sudo_pass: "{{ sudo_pass }}"
+    app_path: "{{ app_path }}"
+    app_dir: sahaj
+    server_dir: server
+  
+  tasks:
+    - stat:
+        path: "{{ app_path }}"
+      register: exist
+
+    - name: create "{{ app_path }}" directory
+      file: dest={{ app_path }} state=directory owner= "{{ become_user }}" group= "{{ become_user }}" mode=0700
+      when: exist.stat.exists != True
+
+    - git: 
+        repo: http://atul:Atul9911@199.217.116.19/sahaj/abcd.sahaj.co.in.git
+        dest: "{{ app_path }}"
+        version: "{{ GIT_TAG }}"
+        refspec: '+refs/heads/{{ GIT_TAG }}:refs/remotes/origin/{{ GIT_TAG }}'
+        update: yes
+        force: true
+      register: cloned 
+          
+    
+    - name: Print complete log list
+      command: git log --pretty=oneline "{{ cloned.after }}..{{ cloned.before }}"
+      args:
+        chdir: "{{ app_path }}/{{ app_dir }}"
+      register: commits_list
+  
+    - mail:
+        host: smtp.gmail.com
+        port: 465
+        username: atul.agrawal@varaunited.com
+        password: Atul@9911
+        from: Atul Agrawal <atul.agrawal@varaunited.com>
+        to: Atul Agrawal <atul.agrawal@varaunited.com>
+        subject: Deployment Status
+        body: 'Your deployment has been successfully done.Commits Deployed List<p>{{ commits_list.stdout_lines }}</p>'
+      delegate_to: "{{ HOST }}"
+
+    - debug: msg="{{ commits_list.stdout_lines }}"
+    - debug: msg="{{ GIT_TAG }}"
+    - debug: msg="{{ cloned }}"
+    - debug: msg="{{ commits_list }}"
+        
+
+
+
+
+
+
+
+         
+        
+  

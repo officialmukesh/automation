@@ -1,0 +1,10 @@
+---
+
+- name: Deploy Application
+  hosts: "{{ host }}"
+  roles: 
+    - db
+  #become: true
+  #become_user: www-data
+  tags: [db]
+

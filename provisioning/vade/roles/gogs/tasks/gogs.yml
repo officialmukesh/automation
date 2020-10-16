@@ -1,0 +1,152 @@
+---
+- name: Include variables
+  include_vars:
+    dir: '../vars'
+    extensions: ['yml']
+
+- name: Install git  
+  yum:    
+    name: git    
+    state: present    
+    update_cache: yes
+  become: true
+  become_user: root
+
+- name: Create git user 
+  user:
+    name: git
+    shell: /bin/bash
+    comment: "GIT User"
+  become: true
+  become_user: root
+
+- stat:
+    path: "{{ gogs_home }}/.bashrc"
+  register: path_sh
+  become: true
+  become_user: git
+
+- name: Create path.sh if not exist
+  copy:
+    content: ""
+    dest: "{{ gogs_home }}/.bashrc"
+    force: no
+    mode: 0644
+  become: true
+  become_user: git
+  when: path_sh.stat.exists != True
+
+- name: Create git directory
+  command: 'mkdir -p {{ gogs_home }}/{{ gogs_project_directory }}/{{ item }}'
+  with_items:
+    - bin
+    - pkg
+    - src
+  become: true
+  become_user: git
+
+- lineinfile:
+    path: "{{ gogs_home }}/.bashrc"
+    line: '{{ item }}'
+  with_items:
+    - export GOBIN="$HOME/{{ gogs_project_directory }}/bin"
+    - export GOPATH="$HOME/{{ gogs_project_directory }}/src"
+  become: true
+  become_user: git
+
+- name: Fetch latest gogs repository
+  shell: "go get -u {{ gogs_repo }}"
+  environment:
+    - PATH: $PATH:/usr/local/go/bin:/usr/bin
+    - GOPATH: "{{gogs_home}}/{{ gogs_project_directory }}/src"
+    - GOBIN:  "{{gogs_home}}/{{ gogs_project_directory }}/bin"
+  become: true
+  become_user: git
+
+- name: Create gogs custom configuration file
+  command: 'mkdir -p custom/conf'
+  args:
+    chdir: "{{gogs_home}}/{{ gogs_project_directory }}/src/src/github.com/gogits/gogs"
+  become: true
+  become_user: git
+
+- name: Create app.ini file in custom/conf
+  template: src={{ item }} dest={{gogs_home}}/{{ gogs_project_directory }}/src/src/github.com/gogits/gogs/custom/conf/app.ini
+  with_fileglob:
+    - ../templates/app.ini.j2
+  become: true
+  become_user: git
+
+- name: Create gogs build
+  command: 'go build'
+  environment:
+    - PATH: $PATH:/usr/local/go/bin:/usr/bin
+    - GOPATH: "{{gogs_home}}/{{ gogs_project_directory }}/src"
+    - GOBIN:  "{{gogs_home}}/{{ gogs_project_directory }}/bin"
+  args:
+    chdir: "{{gogs_home}}/{{ gogs_project_directory }}/src/src/github.com/gogits/gogs"
+  become: true
+  become_user: git
+
+- stat:
+    path: "{{gogs_home}}/{{ gogs_project_directory }}/src/src/github.com/gogits/gogs/log/gogs.log"
+  register: log_exist
+  become: true
+  become_user: git
+
+- name: Create logs directory
+  file: dest={{gogs_home}}/{{ gogs_project_directory }}/src/src/github.com/gogits/gogs/log state=directory
+  when: log_exist.stat.exists != True  
+  become: true
+  become_user: git
+
+- name: Create logs file
+  file: dest={{gogs_home}}/{{ gogs_project_directory }}/src/src/github.com/gogits/gogs/log/gogs.log state=touch
+  when: log_exist.stat.exists != True  
+  become: true
+  become_user: git
+
+
+- name: Create init service
+  template: src={{ item }} dest=/etc/init.d/gogs mode=0755
+  with_fileglob:
+    - ../templates/gogs.j2
+  become: true
+  become_user: root
+
+- name: create gogs.service
+  template: src={{ item }} dest=/etc/systemd/system/gogs.service mode=0755
+  with_fileglob:
+    - ../templates/gogs.service.j2
+  become: true
+  become_user: root
+
+- name: Start gogs service
+  service: 
+    name: gogs
+    state: restarted
+    enabled:  yes
+  become: true
+  become_user: root
+
+- name: copy gogs.conf to the server
+  template: src={{ item }} dest=/etc/httpd/sites-available/gogs.conf
+  with_fileglob:
+    - ../templates/gogs-apache.conf.j2
+  become: true
+  become_user: root
+
+- name: link gogs.conf site-enabled
+  file: src=/etc/httpd/sites-available/gogs.conf dest=/etc/httpd/sites-enabled/gogs.conf state=link
+  become: true
+  become_user: root
+
+#- name: Allow mod_proxy
+#  command: ' /usr/sbin/setsebool -P httpd_can_network_connect 1'
+#  become: true
+#  become_user: root
+
+- name: Restart apache service
+  command: service httpd restart
+  become: true
+  become_user: root

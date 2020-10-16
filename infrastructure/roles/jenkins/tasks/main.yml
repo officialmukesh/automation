@@ -1,0 +1,64 @@
+---
+
+- name: Include variables
+  include_vars:
+    dir: '../vars'
+    extensions: ['yml']
+
+- name: Install java  
+  yum:    
+    name: java    
+    state: present    
+    update_cache: yes
+  #become: true
+  #become_user: root
+
+# Until I found a correct solution of this..we will use alternative way
+- name: Add Jenkins Repository | Add Sources List
+  yum_repository:
+    name: jenkins
+    description: jenkins
+    baseurl: "{{ jenkins_repo }}"
+    gpgkey: "{{ jenkins_key }}"
+    gpgcheck: yes
+  #become: true
+  #become_user: root
+
+- name: Install jenkins 
+  yum:
+    name: jenkins
+    state: present    
+    update_cache: yes
+  #become_user : root
+  #become: true
+  
+- name: Start Jenkins Service | Enable on Boot
+  service:
+    name: jenkins
+    state: started
+    enabled: yes
+  #become: true
+  #become_user: root
+
+- name: copy jenkins.conf to the server
+  template: src={{ item }} dest=/etc/httpd/sites-available/jenkins.conf
+  with_fileglob:
+    - ../templates/jenkins-apache.conf.j2
+  #become: true
+  #become_user: root
+
+- name: link jenkins.conf site-enabled
+  file: src=/etc/httpd/sites-available/jenkins.conf dest=/etc/httpd/sites-enabled/jenkins.conf state=link
+  #become: true
+  #become_user: root
+
+#- name: Allow mod_proxy
+#  command: ' /usr/sbin/setsebool -P httpd_can_network_connect 1'
+#  become: true
+#  become_user: root
+
+- name: Restart apache service
+  command: service httpd restart
+  #become: true
+  #become_user: root
+

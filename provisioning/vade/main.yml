@@ -1,0 +1,6 @@
+---
+- hosts: "{{ HOST }}"
+  tasks:
+    - include: roles/jenkins/tasks/main.yml
+    - include: roles/gogs/tasks/main.yml
+  

@@ -1,0 +1,58 @@
+---
+
+- name: Install apache/httpd
+  yum: 
+    name: httpd
+    state: present
+    update_cache: yes
+  #become: true
+  #become_user: root
+
+- name: Enable reverse proxy module
+  apache2_module:
+    state: present
+    name: "{{ item }}"
+  with_items:
+    - proxy
+    - proxy_http
+    - proxy_ajp
+    - rewrite
+    - deflate
+    - headers
+    - proxy_balancer
+    - proxy_connect
+  #become: true
+  #become_user: root
+
+- stat:
+    path: /etc/httpd/sites-available
+  register: sites_available_exist
+
+- stat:
+    path: /etc/httpd/sites-enabled
+  register: sites_enables_exist
+
+- name: create sites-available  directory
+  file: dest=/etc/httpd/sites-available state=directory 
+  when: sites_enables_exist.stat.exists != True
+  #become: true
+  #become_user: root
+
+- name: create sites-enabled directory
+  file: dest=/etc/httpd/sites-enabled state=directory 
+  when: sites_available_exist.stat.exists != True
+  #become: true
+  #become_user: root
+
+- lineinfile:
+    path: "/etc/httpd/conf/httpd.conf"
+    line: '{{ item }}'
+  with_items:
+    - IncludeOptional sites-enabled/*.conf
+  #become: true
+  #become_user: root
+
+- name: Restart apache service
+  command: service httpd restart
+  #become: true
+  #become_user: root

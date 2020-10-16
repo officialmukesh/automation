@@ -1,0 +1,20 @@
+---
+
+- name: Deploy Application
+  hosts: all
+  roles: 
+    - www
+  become: true
+  become_user: dev
+  tags: [site-deployment,lamp-test]
+
+
+#- name: Building Mysql 
+#  hosts: all
+#  roles: 
+#    - db
+#  become: true
+#  become_user: www-data
+ # tags: [db]
+
+

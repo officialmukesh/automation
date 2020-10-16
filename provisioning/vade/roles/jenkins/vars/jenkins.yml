@@ -1,0 +1,4 @@
+---
+
+jenkins_key: https://pkg.jenkins.io/redhat/jenkins.io.key
+jenkins_repo: https://pkg.jenkins.io/redhat/

@@ -1,0 +1,148 @@
+---
+- hosts: "{{ HOST }}"
+  become: true
+  become_user: root
+  gather_facts: true
+  become_method: sudo
+  
+  vars:
+    #ansible_sudo_pass: "{{ sudo_pass }}"
+    temp_folder: /tmp
+
+  tasks:
+    - name: Include variables
+      include_vars:
+        dir: '../vars'
+        extensions: ['yml']
+  
+    - name: Install git  
+      apt:    
+        name: git    
+        state: present    
+        update_cache: yes
+
+    #- name: MongoDB | Import public key
+    #  apt_key:
+    #    keyserver: "{{ keyserver }}"
+    #    id: "{{ id }}"
+    
+
+    #- name: MongoDB | Add repository
+    #  apt_repository:
+    #    filename: '/etc/apt/sources.list.d/mongodb-org-3.2.list'
+    #    repo: "{{ mongo_repo }}"
+    #    state: present
+    #    update_cache: yes
+    
+    #- name: MongoDB | Install MongoDB
+    #  apt:
+    #    name: mongodb-org
+    #    state: present
+    #    update_cache: yes
+    #  environment:
+    #    LC_ALL: "C"
+
+    #- name: Create /data/db directory
+    #  command: "mkdir -p {{ ansible_env.HOME}}/data/db"
+  
+
+    #- name: MongoDB | Ensure that MongoDB is running
+    #  service:
+    #    name: mongod
+    #    state: started
+    
+    - name: Install gcc/build tools 
+      apt: name={{ item }} state=installed
+      become: true
+      become_user: root
+      with_items:
+        - gcc
+        - build-essential
+
+    
+    - name: Node.js | Checking installed version of node.js
+      shell: /usr/bin/test "$(node -v 2> /dev/null)" = v{{node_version}}
+      register: wanted_version_installed
+      ignore_errors: True
+
+    - name: Node.js | Fetching node.js source
+      action: get_url url=http://nodejs.org/dist/v{{node_version}}/{{node_tarball}} dest=/tmp
+      when: wanted_version_installed.rc == 1
+      become: true
+      become_user: root
+
+    - name: Node.js | Unpack node.js tarball
+      command: tar zxf {{node_tarball}} chdir=/tmp
+      when: wanted_version_installed.rc == 1
+      become: true
+      become_user: root
+
+    - name: Node.js | Configure
+      shell: /usr/bin/python ./configure --prefix={{node_path}} chdir=/tmp/{{node_prefix}}
+      when: wanted_version_installed.rc == 1
+      become: true
+      become_user: root
+
+    - name: Node.js | Make test
+      shell: /usr/bin/make test chdir=/tmp/{{node_prefix}}/
+      when: wanted_version_installed.rc == 1
+      become: true
+      become_user: root
+
+    - name: Node.js | Make install
+      shell: /usr/bin/make install chdir=/tmp/{{node_prefix}}/
+      when: wanted_version_installed.rc == 1
+      become: true
+      become_user: root
+
+    # - name: Node.js | Install bower and gulp globally
+    #   npm: name={{ item }} state=present global=yes
+    #   with_items:
+    #     - bower
+    #     - grunt-cli
+    #     - pm2
+
+    # - name: Nginx Installation | Install Nginx
+    #   apt:
+    #     name: nginx
+    #     state: present
+    #     update_cache: yes
+    #   become: true
+    #   become_user: root    
+
+    # #  Only execute when require
+    # - name: copy nginx.conf to the server
+    #   template: src={{ item }} dest=/etc/nginx/sites-available/"{{ build }}.conf"
+    #   with_fileglob:
+    #     - ../templates/nginx.conf.j2
+    #   become: true
+    #   become_user: root
+
+    #- name: delete default virtualhost
+    #  file: path=/etc/nginx/sites-enabled/default state=absent
+    #  become: true
+    #  become_user: 
+
+    #- name: add mysite site-available
+    #  template: 
+    #    - src=mysite.conf.j2 
+    #    - dest=/etc/nginx/sites-available/mysite.conf
+    #  sudo: yes
+
+    # - name: link mysite site-enabled
+    #   file: path=/etc/nginx/sites-enabled/ src=/etc/nginx/sites-available/{{ build }}.conf state=link
+    #   become: true
+    #   become_user: root
+
+    # - name: Restart nginx service
+    #   command: service nginx restart
+    #   become: true
+    #   become_user: root
+
+
+  
+  # handlers:
+  #   - name: start nginx
+  #     service: name=nginx enables=yes state=started
+
+    

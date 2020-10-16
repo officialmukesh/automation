@@ -1,0 +1,16 @@
+---
+
+- include: lamp-test.yml
+  tags: lamp-test
+  #tags: LIVE-PT-31.13
+  #tags: LIVE-BPOAPPS-31.13
+  #tags: LIVE-PT-66.31
+  #tags: LIVE-BPOAPPS-31.13
+  #tags: UAT-PT-42.20
+
+#- name: Restart Apache Server
+#  include_role: 
+#    name: root
+#    tasks_from: apache-restart.yml
+#  become: true
+#  become_user: root

@@ -1,0 +1,9 @@
+---
+
+
+#- name: Install python dependency
+#  command: easy_install MySQL-python
+
+- include: mysql.yml
+  tags: db
+

@@ -1,0 +1,14 @@
+<Virtualhost *:80>
+    ServerName        git.varauat.com
+    ProxyRequests     Off
+    ProxyPreserveHost On
+    AllowEncodedSlashes NoDecode
+ 
+    <Proxy http://localhost:8000/*>
+      Require all granted
+    </Proxy>
+ 
+    ProxyPass         /  http://localhost:8000/ nocanon
+    ProxyPassReverse  /  http://localhost:8000/
+    ProxyPassReverse  /  git.varauat.com
+</Virtualhost>

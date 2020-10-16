@@ -1,0 +1,7 @@
+---
+  ansible_user: user1
+  ansible_password: India@123
+  ansible_port: 5985
+  ansible_connection: winrm
+  ansible_winrm_scheme: http
+  ansible_winrm_server_cert_validation: ignore

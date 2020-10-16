@@ -1,0 +1,18 @@
+---
+
+- include: vamt-icici.yml
+  #tags: lamp-test
+
+#- name: Push apk to jenkins workspace directory
+#  include_role: 
+#    name: root
+#    tasks_from: jenkins-move.yml
+#  become: true
+#  become_user: root
+
+
+
+
+
+     
+    

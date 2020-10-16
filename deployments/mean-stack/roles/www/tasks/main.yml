@@ -1,0 +1,7 @@
+---
+
+- include: iquippo.yml
+  tags: iquippo
+  become: true
+  become_user: ec2-user
+

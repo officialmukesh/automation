@@ -1,0 +1,88 @@
+- hosts: "{{ HOST }}"
+  become: true
+  become_user: "{{ become_user }}"
+  become_method: su
+  gather_facts: true
+  vars:
+    app_path: sahaj-sql
+    app_dir: "{{ app_dir }}"
+  
+  tasks:
+    - stat:
+        path: "{{ app_path }}/{{ app_dir }}}"
+      register: exist
+
+    - name: create "{{ app_path }}/{{ app_dir }}" directory
+      file: dest="{{ app_path }}/{{ app_dir }}" state=directory 
+      when: exist.stat.exists != True
+
+    - git: 
+        repo: http://atul:Atul9911@199.217.116.19/sahaj/abcd.sahaj-sql.co.in.git
+        dest: "{{ app_path }}/{{ app_dir }}"
+        version: "{{ GIT_TAG }}"
+        refspec: '+refs/heads/{{ GIT_TAG }}:refs/remotes/origin/{{ GIT_TAG }}'
+        update: yes
+        force: true
+      register: cloned 
+    
+    #- name: Install python dependency
+    #  command: easy_install MySQL-python
+    #  become: true
+    #  become_user: "{{ become_user }}"
+    #   become_method: su
+
+    - find:
+        paths: "{{ app_path }}/{{ app_dir }}/{{ scrips_dir }}"
+        patterns: "*.sql"
+      register: files_sql
+      
+    - debug: msg="{{ files_sql.files }}"
+
+    - name: Execute mysql dump files
+      mysql_db:
+        login_host: "{{ db_host }}"
+        login_password: "{{ db_pass }}"
+        login_user: "{{ db_user }}"
+        login_port: "{{ db_port }}"
+        name: "{{ db_name }}"
+        state: import
+        target: "{{ item.path }}"
+      with_items:
+          - "{{ files_sql.files }}"
+      register: mysql_query
+      #when: cloned.changed
+
+
+    - name: Print complete log list
+      command: git log --pretty=oneline "{{ cloned.after }}..{{ cloned.before }}"
+      args:
+        chdir: "{{ app_path }}/{{ app_dir }}"
+      register: commits_list
+  
+    - mail:
+        host: smtp.gmail.com
+        port: 465
+        username: atul.agrawal@varaunited.com
+        password: Atul@9911
+        from: Atul Agrawal <atul.agrawal@varaunited.com>
+        to: Atul Agrawal <atul.agrawal@varaunited.com>
+        subject: Deployment Status
+        body: 'Your deployment has been successfully done.Commits Deployed List<p>{{ commits_list.stdout_lines }}</p>'
+      delegate_to: "{{ HOST }}"
+
+    - debug: msg="{{ commits_list.stdout_lines }}"
+    - debug: msg="{{ GIT_TAG }}"
+    - debug: msg="{{ cloned }}"
+    - debug: msg="{{ commits_list }}"
+    - debug: msg="{{ mysql_query }}" 
+        
+
+
+
+
+
+
+
+         
+        
+  

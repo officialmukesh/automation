@@ -1,0 +1,179 @@
+---
+# - name: 'iquippo-build-creation'
+- win_file:
+    path: "{{ app_path }}"
+    state: directory
+  register: exist
+
+- win_stat:
+    path: "{{ app_path }}/{{ app_dir }}"
+  register: path
+
+- name: Get commit_id before Pull and Build
+  win_shell: "git rev-parse HEAD"
+  args:
+    chdir: "{{ app_path }}/{{ app_dir }}"
+  when: 
+    - path.stat.exists == true
+  register: commit_before
+
+- name: Clone Repository
+  win_shell: "git clone -b {{ GIT_TAG }} {{ project_git_repo }}"
+  args:
+    chdir: "{{ app_path }}"
+  when: 
+    - path.stat.exists == false
+    - build_type  == "build" 
+  register: cloned
+
+- name: Fetch all  the git tags
+  win_shell: "git fetch --all"
+  args:
+    chdir: "{{ app_path }}/{{ app_dir }}"
+  when: 
+    - path.stat.exists == true
+    - build_type  == "build" 
+  register: cloned
+
+- name: Checkout to the branch 
+  win_shell: "git checkout {{ GIT_TAG }}"
+  args:
+    chdir: "{{ app_path }}/{{ app_dir }}"
+  when: 
+    - build_type  == "build" 
+  register: cloned
+
+- name: Pull Changes if Repository Exist
+  win_shell: "git pull origin {{ GIT_TAG }}"
+  args:
+    chdir: "{{ app_path }}/{{ app_dir }}"
+  when: 
+    - path.stat.exists == true
+    - build_type  == "build"
+  register: cloned
+
+- win_stat:
+    path: "{{ app_path }}/{{ app_dir }}/.git/deploy_info.txt"
+  register: deploy_exist
+
+- name: Find out what the remote machine's mounts are
+  slurp:
+    src: "{{ app_path }}/{{ app_dir }}/.git/deploy_info.txt"
+  when: deploy_exist.stat.islnk is defined
+  register: deploy_info
+
+- name: Reverting Changes
+  command: "git reset --hard {{ deploy_info.content | b64decode }}"
+  args:
+    chdir: "{{ app_path }}/{{ app_dir }}"
+  when: 
+    - build_type  == "revert"
+    - deploy_exist.stat.islnk is defined
+
+- name: Create build
+  win_shell: "C:/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe {{ app_path }}/{{ app_dir }}/{{ app_name }}/{{ proj_file }}.csproj /p:Configuration=Release /p:OutputPath={{ app_path }}/{{app_dir}}/Release /p:Platform=x64 /p:WebProjectOutputDir={{ app_path }}/{{app_dir}}/web /p:Outdir={{app_path}}/{{app_dir}}/web/bin   /m:3"
+
+
+- name: Restart IIS Website
+  win_iis_website:
+    name: "{{ iis_site_name }}" 
+    state: restarted
+- name: Get commit_id after Pull and Build
+  win_shell: "git rev-parse HEAD"
+  args:
+    chdir: "{{ app_path }}/{{ app_dir }}"
+  register: commit_after
+
+#- name: Print complete log list if not  deploying first time
+#  win_shell: "git log --pretty=oneline "
+#  args:
+#    chdir: "{{ app_path }}/{{ app_dir }}"
+#  when: 
+#    - build_type  == "build" 
+#    - path.stat.exists == false
+#  register: commits_list
+
+#- name: Print complete log list if not deploying first time
+#  win_shell: git log --pretty=oneline "{{ commit_after.stdout }}..{{ commit_before.stdout }}"
+#  args:
+#    chdir: "{{ app_path }}/{{ app_dir }}"
+#  when: 
+#    - build_type  == "build"   
+#    - path.stat.exists == true
+#    - commit_after.stdout != commit_before.stdout
+
+#  register: commits_list
+
+- name: Ensure Deployment file exist
+  win_file:
+    dest: "{{ app_path }}/{{ app_dir }}/.git/deploy_info.txt"
+    state: touch
+  when: 
+    - path.stat.exists == true
+    - build_type  == "build" 
+    
+- name: Print commit_id after pull
+  win_shell: "git rev-parse HEAD"
+  args:
+    chdir: "{{ app_path }}/{{ app_dir }}"
+  register: deploy_info
+
+- name: Save Deployment Info
+  win_lineinfile:
+    path: "{{ app_path }}/{{ app_dir }}/.git/deploy_info.txt"
+    line: "{{ item.line }}"
+  with_items:
+    - {line: '{{ commit_before.stdout_lines }}'}
+  when: 
+    - deploy_exist.stat.exists == true
+    - build_type  == "build" 
+
+#- debug: msg="{{ commits_list }}"
+
+- mail:
+    host: smtp.gmail.com
+    port: 465
+    username: atul.agrawal@varaunited.com
+    password: Atul@9911
+    from: Atul Agrawal <atul.agrawal@varaunited.com>
+    to: Atul Agrawal <atul.agrawal@varaunited.com>
+    subject: Deployment Status
+    body: 'Your deployment has been successfully done.'
+  when: 
+    - build_type  == "build" 
+  delegate_to: localhost
+
+- mail:
+    host: smtp.gmail.com
+    port: 465
+    username: atul.agrawal@varaunited.com
+    password: Atul@9911
+    from: Atul Agrawal <atul.agrawal@varaunited.com>
+    to: Atul Agrawal <atul.agrawal@varaunited.com>
+    subject: Deployment Status
+    body: 'Your changes has been reverted'
+  when: 
+    - build_type  == "revert" 
+  delegate_to: localhost
+
+- debug: msg="{{ cloned }}"
+#- debug: msg="{{ commits_list }}"
+#  when: 
+#    - build_type  == "build" 
+#    - commits_list is defined
+
+- debug: msg="{{ deploy_info }}"
+- debug: msg="{{ exist }}"
+  when: 
+    - build_type  == "build" 
+
+    
+
+
+
+
+
+
+
+     
+    
